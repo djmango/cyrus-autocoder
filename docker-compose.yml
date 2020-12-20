@@ -1,0 +1,12 @@
+version: '3.3'
+
+services:
+    darius-trainer:
+        build:
+            context: ./
+            dockerfile: Dockerfile
+        container_name: darius-trainer
+        volumes:
+            - ./:/darius-trainer
+        env_file:
+            - .env
