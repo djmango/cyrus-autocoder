@@ -129,5 +129,7 @@ dmypy.json
 .pyre/
 
 *.csv
-models/
-logs/
+old/models/
+old/logs/
+old/classifier/
+.vscode/

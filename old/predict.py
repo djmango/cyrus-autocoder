@@ -6,7 +6,7 @@ from tensorflow.keras.models import load_model
 
 # load models
 model = 'train1'
-classifier = load_model(f"/darius-trainer/models/{model}/classifier/best_model", custom_objects=CUSTOM_OBJECTS)
+classifier = load_model(f"models/{model}/classifier/best_model", custom_objects=CUSTOM_OBJECTS)
 
 specs = json.load(open('specs.json', 'r'))
 
@@ -29,4 +29,5 @@ def predict(text):
     return prediction
 
 if __name__ == "__main__":
-    print(predict('Xray of chest, 3 views'))
+    while True:
+        print(predict(input('Descrption of procedings: ')))
