@@ -132,4 +132,8 @@ dmypy.json
 old/models/
 old/logs/
 old/classifier/
+old/new/
 .vscode/
+*.tmp*
+desktop.ini
+keys.json
