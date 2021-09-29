@@ -1,43 +1,86 @@
 import json
+import logging
 import random
 import re
+from datetime import datetime
 from pathlib import Path
 
 import requests
 
+logger = logging.getLogger(__name__)
+
 HERE = Path(__file__).parent
 
-# randomly choose an api key from key file
-# api_key = input('insert api key: ')
-with open(HERE.joinpath('keys.json')) as keysfile:
-    api_keys = json.load(keysfile)
+class UMLS_handler():
+    """
+    class to handle tickets and authentication requests with UMLS API
+    """
+    HEADERS = {'content-type': 'application/x-www-form-urlencoded'}
 
-if random.randint(0, 1) == 0:
-    api_key = api_keys['umls_al']
-else:
-    api_key = api_keys['umls_sulaiman']
+    def __init__(self, api_key_index=random.randint(0, 1)):
+        # randomly choose an api key from key file
+        with open(HERE.joinpath('keys.json')) as keysfile:
+            api_keys = json.load(keysfile)
 
-headers = {'content-type': 'application/x-www-form-urlencoded'}
+        if api_key_index == 0:
+            self.api_key = api_keys['umls_al']
+        else:
+            self.api_key = api_keys['umls_sulaiman']
+        
+        self.requestTGT()
 
-# get tgt via api key
-r = requests.post('https://utslogin.nlm.nih.gov/cas/v1/api-key', params={'apikey': api_key}, headers=headers)
+    def requestTGT(self):
+        """ get a new TGT via api key
+        Raises:
+            RuntimeError: Failed getting TGT
 
-if r.status_code == 201:
-    print('API Key 201 success!')
-else:
-    print('API Key failure.. ' + str(r.status_code))
-    exit()
+        Returns:
+            str: TGT in a url
+        """
 
-# pull tgt url
-tokenurl = re.findall(r'action="([^"]+)"', r.text)[0]
-print(tokenurl)
+        self.lastTGTtime = datetime.now()
+        r = requests.post('https://utslogin.nlm.nih.gov/cas/v1/api-key', params={'apikey': self.api_key}, headers=UMLS_handler.HEADERS)
 
-# use tgt to get service ticket
-r = requests.post(tokenurl, params={'service': 'http://umlsks.nlm.nih.gov'}, headers=headers)
+        if r.status_code == 201:
+            logger.info('Successfully got TGT: HTTP ' + str(r.status_code))
+        else:
+            raise RuntimeError('Failed getting TGT: HTTP ' + str(r.status_code))
 
-if r.status_code == 200:
-    print('\nSingle-use Token 200 success!')
-    print(r.text)
-else:
-    print('Single-use token failure.. ' + str(r.status_code))
-    exit()
+        # pull tgt url
+        self.tgturl = re.findall(r'action="([^"]+)"', r.text)[0]
+        return self.tgturl
+
+    def ensureTGT(self):
+        """ check if 8 hours have passed since we got the token, if so then request a new one
+
+        Returns:
+            tuple: (gotToken, token) first item in tuple is if we got a new TGT, the second item is the TGT
+        """
+        if not hasattr(self, 'lastTGTtime') or (datetime.now() - self.lastTGTtime).total_seconds() >= 28800:
+            # if so, refresh the token
+            logger.info('TGT refresh required, requesting now..')
+            return (True, self.requestTGT())
+        else:
+            logger.info('No TGT refresh needed')
+            return (False, self.tgturl)
+
+    def getSingleUseTicket(self):
+        """ Requests and returns a single-use token with keys & creds stored in the class instance
+
+        Returns:
+            string: Single-use token
+        """        
+
+        self.ensureTGT()
+        r = requests.post(self.tgturl, params={'service': 'http://umlsks.nlm.nih.gov'}, headers=UMLS_handler.HEADERS)
+
+        if r.status_code == 200:
+            logger.info('Successfully got Single-use ticket: HTTP ' + str(r.status_code))
+            return r.text
+        else:
+            raise RuntimeError('Failed getting Single-use ticket: HTTP ' + str(r.status_code))
+
+if __name__ == "__main__":
+    extreme_gaming = UMLS_handler()
+    extreme_ticket = extreme_gaming.getSingleUseTicket()
+    print(extreme_ticket)
