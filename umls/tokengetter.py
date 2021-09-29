@@ -1,8 +1,9 @@
-import requests
-from pathlib import Path
 import json
 import random
 import re
+from pathlib import Path
+
+import requests
 
 HERE = Path(__file__).parent
 
