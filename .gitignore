@@ -133,6 +133,7 @@ old/models/
 old/logs/
 old/classifier/
 old/new/
+classifier/
 .vscode/
 *.tmp*
 desktop.ini

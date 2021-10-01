@@ -1,8 +1,8 @@
 import csv
 import json
 import logging
-import os
 from datetime import datetime
+from pathlib import Path
 
 import autokeras as ak
 import numpy as np
@@ -13,17 +13,18 @@ from tensorflow.keras import layers
 from tensorflow.keras.layers.experimental.preprocessing import TextVectorization
 from tensorflow.python.keras.saving.save import load_model
 
+HERE = Path(__file__).parent
 
 # setup logging
 logging.basicConfig(level=logging.DEBUG, format=('%(asctime)s %(levelname)s %(name)s | %(message)s'))
 logger = logging.getLogger('darius-trainer')
 logger.setLevel(logging.DEBUG)
 
-specs = json.load(open('specs2.json', 'r'))
+specs = json.load(open(HERE.joinpath('specs2.json'), 'r'))
 
 def loadTraindata():
     training_data_json = []
-    with open('part2.csv', 'r') as f:
+    with open(HERE.joinpath('part2.csv'), 'r') as f:
         reader = csv.reader(f)
         for row in reader:
             training_data_json.append({'text': row[7], 'spec': row[4]})
@@ -59,7 +60,7 @@ def train():
     tensorboard_callback = tf.keras.callbacks.TensorBoard(log_dir=log_dir, histogram_freq=0)
 
     # classifier model
-    classifier = ak.TextClassifier(max_trials=3, overwrite=False, project_name='classifier')
+    classifier = ak.TextClassifier(max_trials=10, overwrite=False, project_name='classifier')
     classifier.fit(classifier_train_data, epochs=8, batch_size=64)
     logger.debug('training finished')
 
@@ -163,6 +164,6 @@ if __name__ == "__main__":
     # df.drop(df.columns[[0,1,2,3,5,8,9]], axis=1, inplace=True)
     # print(df.head())
     # print(df['spec'].unique().tolist())
-    # train()
+    train()
     # newTrain()
     predict()
