@@ -4,6 +4,7 @@ import json
 import random
 import re
 import authhandler
+import dab
 
 
 # https://documentation.uts.nlm.nih.gov/rest/home.html API
@@ -11,7 +12,8 @@ import authhandler
 # config
 BASE_URL = 'https://uts-ws.nlm.nih.gov/rest'
 authy = authhandler.UMLS_handler()
-CUI = 'C0155502'
+crab = dab.Person
+# CUI = 'C0155502'
 # headers = {'content-type': 'application/x-www-form-urlencoded'}
 # healthcheck_url = 'https://hc-ping.com/db5f3705-2427-4f9e-b104-163d9010c7bd'
 
@@ -27,37 +29,6 @@ CUI = 'C0155502'
 # print(r.text)
 
 # get ticket
-
-def definition(searchstring):
-    ticket = authy.getSingleUseTicket()
-    search_url = f'{BASE_URL}/content/current/CUI/{CUI}/definitions'
-
-    params = {
-        'ticket': ticket,
-        'CUI' : CUI,
-    }
-
-    x = requests.get(search_url, params=params, headers=authhandler.UMLS_handler.HEADERS)
-
-    defdata = x.text
-    print(defdata)
-    return defdata
-
-def relation(searchstring):
-    ticket = authy.getSingleUseTicket()
-    search_url = f'{BASE_URL}/content/current/CUI/{CUI}/relations'
-
-    params = {
-        'ticket': ticket,
-        'CUI' : CUI,
-    }
-
-    c = requests.get(search_url, params=params, headers=authhandler.UMLS_handler.HEADERS)
-
-    refdata = c.text
-    print(refdata)
-    return refdata
-
 
 def search(searchstring):
     ticket = authy.getSingleUseTicket()

@@ -7,19 +7,19 @@ from pathlib import Path
 
 import requests
 
-logger = logging.getLogger(__name__)
-
-HERE = Path(__file__).parent
-
 class UMLS_handler():
     """
     class to handle tickets and authentication requests with UMLS API
     """
     HEADERS = {'content-type': 'application/x-www-form-urlencoded'}
+    HERE = Path(__file__).parent
 
     def __init__(self, api_key_index=random.randint(0, 1)):
+        # init our instance logger
+        self.logger = logging.getLogger(self.__class__.__name__)
+
         # randomly choose an api key from key file
-        with open(HERE.joinpath('keys.json')) as keysfile:
+        with open(UMLS_handler.HERE.joinpath('keys.json')) as keysfile:
             api_keys = json.load(keysfile)
 
         if api_key_index == 0:
@@ -42,7 +42,7 @@ class UMLS_handler():
         r = requests.post('https://utslogin.nlm.nih.gov/cas/v1/api-key', params={'apikey': self.api_key}, headers=UMLS_handler.HEADERS)
 
         if r.status_code == 201:
-            logger.info('Successfully got TGT: HTTP ' + str(r.status_code))
+            self.logger.info('Successfully got TGT: HTTP ' + str(r.status_code))
         else:
             raise RuntimeError('Failed getting TGT: HTTP ' + str(r.status_code))
 
@@ -58,10 +58,10 @@ class UMLS_handler():
         """
         if not hasattr(self, 'lastTGTtime') or (datetime.now() - self.lastTGTtime).total_seconds() >= 28800:
             # if so, refresh the token
-            logger.info('TGT refresh required, requesting now..')
+            self.logger.info('TGT refresh required, requesting now..')
             return (True, self.requestTGT())
         else:
-            logger.info('No TGT refresh needed')
+            self.logger.info('No TGT refresh needed')
             return (False, self.tgturl)
 
     def getSingleUseTicket(self):
@@ -75,7 +75,7 @@ class UMLS_handler():
         r = requests.post(self.tgturl, params={'service': 'http://umlsks.nlm.nih.gov'}, headers=UMLS_handler.HEADERS)
 
         if r.status_code == 200:
-            logger.info('Successfully got Single-use ticket: HTTP ' + str(r.status_code))
+            self.logger.info('Successfully got Single-use ticket: HTTP ' + str(r.status_code))
             return r.text
         else:
             raise RuntimeError('Failed getting Single-use ticket: HTTP ' + str(r.status_code))
